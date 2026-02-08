@@ -1,0 +1,1429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Omnicalc - Your Universal Calculator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0e17;
+            --bg-secondary: #121826;
+            --bg-tertiary: #1a2332;
+            --accent-primary: #00d9ff;
+            --accent-secondary: #ff006e;
+            --accent-tertiary: #ffbe0b;
+            --text-primary: #ffffff;
+            --text-secondary: #8b9cb5;
+            --shadow-glow: 0 0 30px rgba(0, 217, 255, 0.3);
+            --border-color: rgba(139, 156, 181, 0.2);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: linear-gradient(135deg, #0a0e17 0%, #1a2332 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(0, 217, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(255, 0, 110, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        header {
+            text-align: center;
+            padding: 40px 20px;
+            animation: fadeInDown 0.6s ease;
+        }
+
+        h1 {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+            letter-spacing: -1px;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: clamp(0.9rem, 2vw, 1.1rem);
+            font-weight: 300;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 30px;
+            animation: fadeInUp 0.6s ease 0.2s backwards;
+        }
+
+        @media (max-width: 968px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Sidebar Navigation */
+        .sidebar {
+            background: var(--bg-secondary);
+            border-radius: 20px;
+            padding: 25px;
+            border: 1px solid var(--border-color);
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+        }
+
+        .nav-title {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--text-secondary);
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .nav-item {
+            padding: 12px 16px;
+            margin-bottom: 8px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 500;
+            background: transparent;
+            border: 1px solid transparent;
+        }
+
+        .nav-item:hover {
+            background: var(--bg-tertiary);
+            border-color: var(--border-color);
+            transform: translateX(5px);
+        }
+
+        .nav-item.active {
+            background: linear-gradient(135deg, rgba(0, 217, 255, 0.15), rgba(255, 0, 110, 0.15));
+            border-color: var(--accent-primary);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .nav-icon {
+            font-size: 1.2rem;
+        }
+
+        /* Calculator Display */
+        .calc-container {
+            background: var(--bg-secondary);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid var(--border-color);
+        }
+
+        .display {
+            background: var(--bg-primary);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 25px;
+            border: 1px solid var(--border-color);
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .display::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent-primary), transparent);
+            animation: scanline 3s linear infinite;
+        }
+
+        @keyframes scanline {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 1; }
+        }
+
+        .display-prev {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            min-height: 24px;
+        }
+
+        .display-current {
+            font-size: clamp(2rem, 4vw, 3rem);
+            font-weight: 600;
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+            word-break: break-all;
+            text-align: right;
+            text-shadow: 0 0 10px rgba(0, 217, 255, 0.3);
+        }
+
+        /* Calculator Buttons */
+        .calc-section {
+            display: none;
+        }
+
+        .calc-section.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+
+        @media (max-width: 768px) {
+            .button-grid {
+                gap: 8px;
+            }
+        }
+
+        .calc-btn {
+            padding: 24px;
+            border: none;
+            border-radius: 14px;
+            font-size: 1.3rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .calc-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+            border-color: var(--accent-primary);
+        }
+
+        .calc-btn:active {
+            transform: translateY(0);
+        }
+
+        .calc-btn.operator {
+            background: linear-gradient(135deg, rgba(0, 217, 255, 0.2), rgba(0, 217, 255, 0.1));
+            color: var(--accent-primary);
+            font-weight: 700;
+        }
+
+        .calc-btn.equals {
+            background: linear-gradient(135deg, var(--accent-primary), #00b8d4);
+            color: var(--bg-primary);
+            font-weight: 700;
+            grid-column: span 2;
+        }
+
+        .calc-btn.clear {
+            background: linear-gradient(135deg, var(--accent-secondary), #d4006e);
+            color: white;
+        }
+
+        .calc-btn.span-2 {
+            grid-column: span 2;
+        }
+
+        /* Form Controls */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 14px 18px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            font-size: 1rem;
+            font-family: 'Outfit', sans-serif;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(0, 217, 255, 0.1);
+        }
+
+        .form-select {
+            width: 100%;
+            padding: 14px 18px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            font-size: 1rem;
+            cursor: pointer;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--accent-primary), #00b8d4);
+            color: var(--bg-primary);
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 217, 255, 0.4);
+        }
+
+        .result-box {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 12px;
+            background: var(--bg-primary);
+            border: 1px solid var(--accent-primary);
+            display: none;
+        }
+
+        .result-box.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+
+        .result-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+
+        .result-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent-primary);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Animations */
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .calc-btn {
+                padding: 18px;
+                font-size: 1.1rem;
+            }
+            
+            .sidebar {
+                position: static;
+            }
+            
+            header {
+                padding: 20px 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Omnicalc</h1>
+            <p class="subtitle">Your Universal Calculation Companion</p>
+        </header>
+
+        <div class="main-content">
+            <!-- Sidebar Navigation -->
+            <aside class="sidebar">
+                <div class="nav-title">Calculators</div>
+                <div class="nav-item active" data-calc="basic">
+                    <span class="nav-icon">🔢</span>
+                    <span>Basic</span>
+                </div>
+                <div class="nav-item" data-calc="bmi">
+                    <span class="nav-icon">⚖️</span>
+                    <span>BMI</span>
+                </div>
+                <div class="nav-item" data-calc="age">
+                    <span class="nav-icon">🎂</span>
+                    <span>Age</span>
+                </div>
+                <div class="nav-item" data-calc="discount">
+                    <span class="nav-icon">🏷️</span>
+                    <span>Discount</span>
+                </div>
+                <div class="nav-item" data-calc="percentage">
+                    <span class="nav-icon">%</span>
+                    <span>Percentage</span>
+                </div>
+                <div class="nav-item" data-calc="date">
+                    <span class="nav-icon">📅</span>
+                    <span>Date</span>
+                </div>
+                
+                <div class="nav-title" style="margin-top: 25px;">Unit Converters</div>
+                <div class="nav-item" data-calc="length">
+                    <span class="nav-icon">📏</span>
+                    <span>Length</span>
+                </div>
+                <div class="nav-item" data-calc="area">
+                    <span class="nav-icon">📐</span>
+                    <span>Area</span>
+                </div>
+                <div class="nav-item" data-calc="volume">
+                    <span class="nav-icon">🧊</span>
+                    <span>Volume</span>
+                </div>
+                <div class="nav-item" data-calc="temperature">
+                    <span class="nav-icon">🌡️</span>
+                    <span>Temperature</span>
+                </div>
+                <div class="nav-item" data-calc="mass">
+                    <span class="nav-icon">⚖️</span>
+                    <span>Mass</span>
+                </div>
+                <div class="nav-item" data-calc="time">
+                    <span class="nav-icon">⏱️</span>
+                    <span>Time</span>
+                </div>
+                
+                <div class="nav-title" style="margin-top: 25px;">Finance</div>
+                <div class="nav-item" data-calc="currency">
+                    <span class="nav-icon">💱</span>
+                    <span>Currency</span>
+                </div>
+                <div class="nav-item" data-calc="splitbill">
+                    <span class="nav-icon">🧾</span>
+                    <span>Split Bill</span>
+                </div>
+                <div class="nav-item" data-calc="gst">
+                    <span class="nav-icon">💰</span>
+                    <span>GST</span>
+                </div>
+            </aside>
+
+            <!-- Calculator Main Area -->
+            <main class="calc-container">
+                <!-- Basic Calculator -->
+                <div id="basic" class="calc-section active">
+                    <div class="display">
+                        <div class="display-prev" id="prevDisplay"></div>
+                        <div class="display-current" id="currentDisplay">0</div>
+                    </div>
+                    <div class="button-grid">
+                        <button class="calc-btn clear" onclick="clearDisplay()">AC</button>
+                        <button class="calc-btn" onclick="deleteLast()">⌫</button>
+                        <button class="calc-btn operator" onclick="appendOperator('%')">%</button>
+                        <button class="calc-btn operator" onclick="appendOperator('/')">÷</button>
+                        
+                        <button class="calc-btn" onclick="appendNumber('7')">7</button>
+                        <button class="calc-btn" onclick="appendNumber('8')">8</button>
+                        <button class="calc-btn" onclick="appendNumber('9')">9</button>
+                        <button class="calc-btn operator" onclick="appendOperator('*')">×</button>
+                        
+                        <button class="calc-btn" onclick="appendNumber('4')">4</button>
+                        <button class="calc-btn" onclick="appendNumber('5')">5</button>
+                        <button class="calc-btn" onclick="appendNumber('6')">6</button>
+                        <button class="calc-btn operator" onclick="appendOperator('-')">−</button>
+                        
+                        <button class="calc-btn" onclick="appendNumber('1')">1</button>
+                        <button class="calc-btn" onclick="appendNumber('2')">2</button>
+                        <button class="calc-btn" onclick="appendNumber('3')">3</button>
+                        <button class="calc-btn operator" onclick="appendOperator('+')">+</button>
+                        
+                        <button class="calc-btn span-2" onclick="appendNumber('0')">0</button>
+                        <button class="calc-btn" onclick="appendNumber('.')">.</button>
+                        <button class="calc-btn equals" onclick="calculate()">=</button>
+                    </div>
+                </div>
+
+                <!-- BMI Calculator -->
+                <div id="bmi" class="calc-section">
+                    <h2 style="margin-bottom: 25px; color: var(--accent-primary);">BMI Calculator</h2>
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label class="form-label">Height (cm)</label>
+                            <input type="number" class="form-input" id="bmiHeight" placeholder="170">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Weight (kg)</label>
+                            <input type="number" class="form-input" id="bmiWeight" placeholder="70">
+                        </div>
+                    </div>
+                    <button class="submit-btn" onclick="calculateBMI()">Calculate BMI</button>
+                    <div class="result-box" id="bmiResult">
+                        <div class="result-label">Your BMI</div>
+                        <div class="result-value" id="bmiValue"></div>
+                        <div class="result-label" style="margin-top: 10px;" id="bmiCategory"></div>
+                    </div>
+                </div>
+
+                <!-- Age Calculator -->
+                <div id="age" class="calc-section">
+                    <h2 style="margin-bottom: 25px; color: var(--accent-primary);">Age Calculator</h2>
+                    <div class="form-group">
+                        <label class="form-label">Birth Date</label>
+                        <input type="date" class="form-input" id="birthDate">
+                    </div>
+                    <button class="submit-btn" onclick="calculateAge()">Calculate Age</button>
+                    <div class="result-box" id="ageResult">
+                        <div class="result-label">Your Age</div>
+                        <div class="result-value" id="ageValue"></div>
+                        <div class="result-label" style="margin-top: 10px;" id="ageDetails"></div>
+                    </div>
+                </div>
+
+                <!-- Discount Calculator -->
+                <div id="discount" class="calc-section">
+                    <h2 style="margin-bottom: 25px; color: var(--accent-primary);">Discount Calculator</h2>
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label class="form-label">Original Price</label>
+                            <input type="number" class="form-input" id="originalPrice" placeholder="1000">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Discount (%)</label>
+                            <input type="number" class="form-input" id="discountPercent" placeholder="20">
+                        </div>
+                    </div>
+                    <button class="submit-btn" onclick="calculateDiscount()">Calculate Discount</button>
+                    <div class="result-box" id="discountResult">
+                        <div class="result-label">Discount Amount</div>
+                        <div class="result-value" id="discountAmount"></div>
+                        <div class="result-label" style="margin-top: 10px;">Final Price</div>
+                        <div class="result-value" id="finalPrice"></div>
+                    </div>
+                </div>
+
+                <!-- Percentage Calculator -->
+                <div id="percentage" class="calc-section">
+                    <h2 style="margin-bottom: 25px; color: var(--accent-primary);">Percentage Calculator</h2>
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label class="form-label">Number</label>
+                            <input type="number" class="form-input" id="percentNumber" placeholder="50">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Percentage (%)</label>
+                            <input type="number" class="form-input" id="percentValue" placeholder="25">
+                        </div>
+                    </div>
+                    <button class="submit-btn" onclick="calculatePercentage()">Calculate</button>
+                    <div class="result-box" id="percentResult">
+                        <div class="result-label">Result</div>
+                        <div class="result-value" id="percentAnswer"></div>
+                    </div>
+                </div>
+
+                <!-- Date Calculator -->
+                <div id="date" class="calc-section">
+                    <h2 style="margin-bottom: 25px; color: var(--accent-primary);">Date Calculator</h2>
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label class="form-label">Start Date</label>
+                            <input type="date" class="form-input" id="startDate">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">End Date</label>
+                            <input type="date" class="form-input" id="endDate">
+                        </div>
+                    </div>
+                    <button class="submit-btn" onclick="calculateDateDiff()">Calculate Difference</button>
+                    <div class="result-box" id="dateResult">
+                        <div class="result-label">Difference</div>
+                        <div class="result-value" id="dateDiff"></div>
+                    </div>
+                </div>
+
+                <!-- Length Converter -->
+                <div id="length" class="calc-section">
+                    <h2 style="margin-bottom: 25px; color: var(--accent-primary);">Length Converter</h2>
+                    <div class="form-group">
+                        <label class="form-label">Value</label>
+                        <input type="number" class="form-input" id="lengthValue" placeholder="100">
+                    </div>
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label class="form-label">From</label>
+                            <select class="form-select" id="lengthFrom">
+                                <option value="meter">Meter</option>
+                                <option value="kilometer">Kilometer</option>
+                                <option value="centimeter">Centimeter</option>
+                                <option value="millimeter">Millimeter</option>
+                                <option value="mile">Mile</option>
+                                <option value="yard">Yard</option>
+                                <option value="foot">Foot</option>
+                                <option value="inch">Inch</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">To</label>
+                            <select class="form-select" id="lengthTo">
+                                <option value="meter">Meter</option>
+                                <option value="kilometer">Kilometer</option>
+                                <option value="centimeter">Centimeter</option>
+                                <option value="millimeter">Millimeter</option>
+                                <option value="mile">Mile</option>
+                                <option value="yard">Yard</option>
+                                <option value="foot">Foot</option>
+                                <option value="inch">Inch</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button class="submit-btn" onclick="convertLength()">Convert</button>
+                    <div class="result-box" id="lengthResult">
+                        <div class="result-label">Result</div>
+                        <div class="result-value" id="lengthAnswer"></div>
+                    </div>
+                </div>
+
+                <!-- Area Converter -->
+                <div id="area" class="calc-section">
+                    <h2 style="margin-bottom: 25px; color: var(--accent-primary);">Area Converter</h2>
+                    <div class="form-group">
+                        <label class="form-label">Value</label>
+                        <input type="number" class="form-input" id="areaValue" placeholder="100">
+                    </div>
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label class="form-label">From</label>
+                            <select class="form-select" id="areaFrom">
+                                <option value="sqmeter">Square Meter</option>
+                                <option value="sqkilometer">Square Kilometer</option>
+                                <option value="sqcentimeter">Square Centimeter</option>
+                                <option value="sqfoot">Square Foot</option>
+                                <option value="sqinch">Square Inch</option>
+                                <option value="acre">Acre</option>
+                                <option value="hectare">Hectare</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">To</label>
+                            <select class="form-select" id="areaTo">
+                                <option value="sqmeter">Square Meter</option>
+                                <option value="sqkilometer">Square Kilometer</option>
+                                <option value="sqcentimeter">Square Centimeter</option>
+                                <option value="sqfoot">Square Foot</option>
+                                <option value="sqinch">Square Inch</option>
+                                <option value="acre">Acre</option>
+                                <option value="hectare">Hectare</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button class="submit-btn" onclick="convertArea()">Convert</button>
+                    <div class="result-box" id="areaResult">
+                        <div class="result-label">Result</div>
+                        <div class="result-value" id="areaAnswer"></div>
+                    </div>
+                </div>
+
+                <!-- Volume Converter -->
+                <div id="volume" class="calc-section">
+                    <h2 style="margin-bottom: 25px; color: var(--accent-primary);">Volume Converter</h2>
+                    <div class="form-group">
+                        <label class="form-label">Value</label>
+                        <input type="number" class="form-input" id="volumeValue" placeholder="100">
+                    </div>
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label class="form-label">From</label>
+                            <select class="form-select" id="volumeFrom">
+                                <option value="liter">Liter</option>
+                                <option value="milliliter">Milliliter</option>
+                                <option value="cubicmeter">Cubic Meter</option>
+                                <option value="gallon">Gallon (US)</option>
+                                <option value="quart">Quart</option>
+                                <option value="pint">Pint</option>
+                                <option value="cup">Cup</option>
+                                <option value="fluidounce">Fluid Ounce</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">To</label>
+                            <select class="form-select" id="volumeTo">
+                                <option value="liter">Liter</option>
+                                <option value="milliliter">Milliliter</option>
+                                <option value="cubicmeter">Cubic Meter</option>
+                                <option value="gallon">Gallon (US)</option>
+                                <option value="quart">Quart</option>
+                                <option value="pint">Pint</option>
+                                <option value="cup">Cup</option>
+                                <option value="fluidounce">Fluid Ounce</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button class="submit-btn" onclick="convertVolume()">Convert</button>
+                    <div class="result-box" id="volumeResult">
+                        <div class="result-label">Result</div>
+                        <div class="result-value" id="volumeAnswer"></div>
+                    </div>
+                </div>
+
+                <!-- Temperature Converter -->
+                <div id="temperature" class="calc-section">
+                    <h2 style="margin-bottom: 25px; color: var(--accent-primary);">Temperature Converter</h2>
+                    <div class="form-group">
+                        <label class="form-label">Value</label>
+                        <input type="number" class="form-input" id="tempValue" placeholder="25">
+                    </div>
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label class="form-label">From</label>
+                            <select class="form-select" id="tempFrom">
+                                <option value="celsius">Celsius</option>
+                                <option value="fahrenheit">Fahrenheit</option>
+                                <option value="kelvin">Kelvin</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">To</label>
+                            <select class="form-select" id="tempTo">
+                                <option value="celsius">Celsius</option>
+                                <option value="fahrenheit">Fahrenheit</option>
+                                <option value="kelvin">Kelvin</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button class="submit-btn" onclick="convertTemperature()">Convert</button>
+                    <div class="result-box" id="tempResult">
+                        <div class="result-label">Result</div>
+                        <div class="result-value" id="tempAnswer"></div>
+                    </div>
+                </div>
+
+                <!-- Mass Converter -->
+                <div id="mass" class="calc-section">
+                    <h2 style="margin-bottom: 25px; color: var(--accent-primary);">Mass Converter</h2>
+                    <div class="form-group">
+                        <label class="form-label">Value</label>
+                        <input type="number" class="form-input" id="massValue" placeholder="100">
+                    </div>
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label class="form-label">From</label>
+                            <select class="form-select" id="massFrom">
+                                <option value="kilogram">Kilogram</option>
+                                <option value="gram">Gram</option>
+                                <option value="milligram">Milligram</option>
+                                <option value="pound">Pound</option>
+                                <option value="ounce">Ounce</option>
+                                <option value="ton">Metric Ton</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">To</label>
+                            <select class="form-select" id="massTo">
+                                <option value="kilogram">Kilogram</option>
+                                <option value="gram">Gram</option>
+                                <option value="milligram">Milligram</option>
+                                <option value="pound">Pound</option>
+                                <option value="ounce">Ounce</option>
+                                <option value="ton">Metric Ton</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button class="submit-btn" onclick="convertMass()">Convert</button>
+                    <div class="result-box" id="massResult">
+                        <div class="result-label">Result</div>
+                        <div class="result-value" id="massAnswer"></div>
+                    </div>
+                </div>
+
+                <!-- Time Converter -->
+                <div id="time" class="calc-section">
+                    <h2 style="margin-bottom: 25px; color: var(--accent-primary);">Time Converter</h2>
+                    <div class="form-group">
+                        <label class="form-label">Value</label>
+                        <input type="number" class="form-input" id="timeValue" placeholder="60">
+                    </div>
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label class="form-label">From</label>
+                            <select class="form-select" id="timeFrom">
+                                <option value="second">Second</option>
+                                <option value="minute">Minute</option>
+                                <option value="hour">Hour</option>
+                                <option value="day">Day</option>
+                                <option value="week">Week</option>
+                                <option value="month">Month</option>
+                                <option value="year">Year</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">To</label>
+                            <select class="form-select" id="timeTo">
+                                <option value="second">Second</option>
+                                <option value="minute">Minute</option>
+                                <option value="hour">Hour</option>
+                                <option value="day">Day</option>
+                                <option value="week">Week</option>
+                                <option value="month">Month</option>
+                                <option value="year">Year</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button class="submit-btn" onclick="convertTime()">Convert</button>
+                    <div class="result-box" id="timeResult">
+                        <div class="result-label">Result</div>
+                        <div class="result-value" id="timeAnswer"></div>
+                    </div>
+                </div>
+
+                <!-- Currency Converter -->
+                <div id="currency" class="calc-section">
+                    <h2 style="margin-bottom: 25px; color: var(--accent-primary);">Currency Converter</h2>
+                    <div class="form-group">
+                        <label class="form-label">Amount</label>
+                        <input type="number" class="form-input" id="currencyAmount" placeholder="100">
+                    </div>
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label class="form-label">From</label>
+                            <select class="form-select" id="currencyFrom">
+                                <option value="USD">USD - US Dollar</option>
+                                <option value="EUR">EUR - Euro</option>
+                                <option value="GBP">GBP - British Pound</option>
+                                <option value="INR">INR - Indian Rupee</option>
+                                <option value="JPY">JPY - Japanese Yen</option>
+                                <option value="AUD">AUD - Australian Dollar</option>
+                                <option value="CAD">CAD - Canadian Dollar</option>
+                                <option value="CHF">CHF - Swiss Franc</option>
+                                <option value="CNY">CNY - Chinese Yuan</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">To</label>
+                            <select class="form-select" id="currencyTo">
+                                <option value="USD">USD - US Dollar</option>
+                                <option value="EUR">EUR - Euro</option>
+                                <option value="GBP">GBP - British Pound</option>
+                                <option value="INR" selected>INR - Indian Rupee</option>
+                                <option value="JPY">JPY - Japanese Yen</option>
+                                <option value="AUD">AUD - Australian Dollar</option>
+                                <option value="CAD">CAD - Canadian Dollar</option>
+                                <option value="CHF">CHF - Swiss Franc</option>
+                                <option value="CNY">CNY - Chinese Yuan</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button class="submit-btn" onclick="convertCurrency()">Convert</button>
+                    <div class="result-box" id="currencyResult">
+                        <div class="result-label">Converted Amount</div>
+                        <div class="result-value" id="currencyAnswer"></div>
+                        <div class="result-label" style="margin-top: 10px; font-size: 0.85rem;">Note: Using approximate exchange rates</div>
+                    </div>
+                </div>
+
+                <!-- Split Bill Calculator -->
+                <div id="splitbill" class="calc-section">
+                    <h2 style="margin-bottom: 25px; color: var(--accent-primary);">Split Bill Calculator</h2>
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label class="form-label">Total Bill</label>
+                            <input type="number" class="form-input" id="billTotal" placeholder="1000">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Number of People</label>
+                            <input type="number" class="form-input" id="billPeople" placeholder="4">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Tip Percentage (Optional)</label>
+                        <input type="number" class="form-input" id="billTip" placeholder="10">
+                    </div>
+                    <button class="submit-btn" onclick="calculateSplitBill()">Calculate Split</button>
+                    <div class="result-box" id="splitBillResult">
+                        <div class="result-label">Per Person (with tip)</div>
+                        <div class="result-value" id="perPersonAmount"></div>
+                        <div class="result-label" style="margin-top: 10px;">Total with Tip</div>
+                        <div class="result-value" id="totalWithTip"></div>
+                    </div>
+                </div>
+
+                <!-- GST Calculator -->
+                <div id="gst" class="calc-section">
+                    <h2 style="margin-bottom: 25px; color: var(--accent-primary);">GST Calculator</h2>
+                    <div class="form-group">
+                        <label class="form-label">Calculation Type</label>
+                        <select class="form-select" id="gstType">
+                            <option value="exclusive">Add GST (Exclusive)</option>
+                            <option value="inclusive">Remove GST (Inclusive)</option>
+                        </select>
+                    </div>
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label class="form-label">Amount</label>
+                            <input type="number" class="form-input" id="gstAmount" placeholder="1000">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">GST Rate (%)</label>
+                            <select class="form-select" id="gstRate">
+                                <option value="5">5%</option>
+                                <option value="12">12%</option>
+                                <option value="18" selected>18%</option>
+                                <option value="28">28%</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button class="submit-btn" onclick="calculateGST()">Calculate GST</button>
+                    <div class="result-box" id="gstResult">
+                        <div class="result-label">GST Amount</div>
+                        <div class="result-value" id="gstValue"></div>
+                        <div class="result-label" style="margin-top: 10px;">Total Amount</div>
+                        <div class="result-value" id="gstTotal"></div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        // Navigation
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const calcType = this.getAttribute('data-calc');
+                
+                // Update active nav item
+                document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Show corresponding calculator
+                document.querySelectorAll('.calc-section').forEach(section => section.classList.remove('active'));
+                document.getElementById(calcType).classList.add('active');
+            });
+        });
+
+        // Basic Calculator
+        let currentInput = '0';
+        let previousInput = '';
+        let operation = null;
+
+        function updateDisplay() {
+            document.getElementById('currentDisplay').textContent = currentInput;
+            document.getElementById('prevDisplay').textContent = previousInput;
+        }
+
+        function appendNumber(num) {
+            if (currentInput === '0') {
+                currentInput = num;
+            } else {
+                currentInput += num;
+            }
+            updateDisplay();
+        }
+
+        function appendOperator(op) {
+            if (operation !== null) {
+                calculate();
+            }
+            operation = op;
+            previousInput = currentInput + ' ' + op;
+            currentInput = '0';
+            updateDisplay();
+        }
+
+        function calculate() {
+            let result;
+            const prev = parseFloat(previousInput);
+            const current = parseFloat(currentInput);
+            
+            if (isNaN(prev) || isNaN(current)) return;
+            
+            switch (operation) {
+                case '+':
+                    result = prev + current;
+                    break;
+                case '-':
+                    result = prev - current;
+                    break;
+                case '*':
+                    result = prev * current;
+                    break;
+                case '/':
+                    result = prev / current;
+                    break;
+                case '%':
+                    result = prev % current;
+                    break;
+                default:
+                    return;
+            }
+            
+            currentInput = result.toString();
+            operation = null;
+            previousInput = '';
+            updateDisplay();
+        }
+
+        function clearDisplay() {
+            currentInput = '0';
+            previousInput = '';
+            operation = null;
+            updateDisplay();
+        }
+
+        function deleteLast() {
+            currentInput = currentInput.slice(0, -1) || '0';
+            updateDisplay();
+        }
+
+        // BMI Calculator
+        function calculateBMI() {
+            const height = parseFloat(document.getElementById('bmiHeight').value) / 100;
+            const weight = parseFloat(document.getElementById('bmiWeight').value);
+            
+            if (!height || !weight) {
+                alert('Please enter valid height and weight');
+                return;
+            }
+            
+            const bmi = (weight / (height * height)).toFixed(2);
+            let category = '';
+            
+            if (bmi < 18.5) category = 'Underweight';
+            else if (bmi < 25) category = 'Normal weight';
+            else if (bmi < 30) category = 'Overweight';
+            else category = 'Obese';
+            
+            document.getElementById('bmiValue').textContent = bmi;
+            document.getElementById('bmiCategory').textContent = `Category: ${category}`;
+            document.getElementById('bmiResult').classList.add('show');
+        }
+
+        // Age Calculator
+        function calculateAge() {
+            const birthDate = new Date(document.getElementById('birthDate').value);
+            const today = new Date();
+            
+            if (!document.getElementById('birthDate').value) {
+                alert('Please select a birth date');
+                return;
+            }
+            
+            let years = today.getFullYear() - birthDate.getFullYear();
+            let months = today.getMonth() - birthDate.getMonth();
+            let days = today.getDate() - birthDate.getDate();
+            
+            if (days < 0) {
+                months--;
+                days += new Date(today.getFullYear(), today.getMonth(), 0).getDate();
+            }
+            
+            if (months < 0) {
+                years--;
+                months += 12;
+            }
+            
+            const totalDays = Math.floor((today - birthDate) / (1000 * 60 * 60 * 24));
+            
+            document.getElementById('ageValue').textContent = `${years} years`;
+            document.getElementById('ageDetails').textContent = `${years} years, ${months} months, ${days} days (${totalDays.toLocaleString()} total days)`;
+            document.getElementById('ageResult').classList.add('show');
+        }
+
+        // Discount Calculator
+        function calculateDiscount() {
+            const price = parseFloat(document.getElementById('originalPrice').value);
+            const discount = parseFloat(document.getElementById('discountPercent').value);
+            
+            if (!price || !discount) {
+                alert('Please enter valid values');
+                return;
+            }
+            
+            const discountAmount = (price * discount / 100).toFixed(2);
+            const finalPrice = (price - discountAmount).toFixed(2);
+            
+            document.getElementById('discountAmount').textContent = `₹${discountAmount}`;
+            document.getElementById('finalPrice').textContent = `₹${finalPrice}`;
+            document.getElementById('discountResult').classList.add('show');
+        }
+
+        // Percentage Calculator
+        function calculatePercentage() {
+            const number = parseFloat(document.getElementById('percentNumber').value);
+            const percent = parseFloat(document.getElementById('percentValue').value);
+            
+            if (!number || !percent) {
+                alert('Please enter valid values');
+                return;
+            }
+            
+            const result = (number * percent / 100).toFixed(2);
+            document.getElementById('percentAnswer').textContent = result;
+            document.getElementById('percentResult').classList.add('show');
+        }
+
+        // Date Calculator
+        function calculateDateDiff() {
+            const start = new Date(document.getElementById('startDate').value);
+            const end = new Date(document.getElementById('endDate').value);
+            
+            if (!document.getElementById('startDate').value || !document.getElementById('endDate').value) {
+                alert('Please select both dates');
+                return;
+            }
+            
+            const diffTime = Math.abs(end - start);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            const diffWeeks = Math.floor(diffDays / 7);
+            const diffMonths = Math.floor(diffDays / 30);
+            
+            document.getElementById('dateDiff').textContent = `${diffDays} days (${diffWeeks} weeks, ${diffMonths} months)`;
+            document.getElementById('dateResult').classList.add('show');
+        }
+
+        // Length Converter
+        const lengthUnits = {
+            meter: 1,
+            kilometer: 0.001,
+            centimeter: 100,
+            millimeter: 1000,
+            mile: 0.000621371,
+            yard: 1.09361,
+            foot: 3.28084,
+            inch: 39.3701
+        };
+
+        function convertLength() {
+            const value = parseFloat(document.getElementById('lengthValue').value);
+            const from = document.getElementById('lengthFrom').value;
+            const to = document.getElementById('lengthTo').value;
+            
+            if (!value) {
+                alert('Please enter a value');
+                return;
+            }
+            
+            const meters = value / lengthUnits[from];
+            const result = (meters * lengthUnits[to]).toFixed(6);
+            
+            document.getElementById('lengthAnswer').textContent = `${result} ${to}`;
+            document.getElementById('lengthResult').classList.add('show');
+        }
+
+        // Area Converter
+        const areaUnits = {
+            sqmeter: 1,
+            sqkilometer: 0.000001,
+            sqcentimeter: 10000,
+            sqfoot: 10.7639,
+            sqinch: 1550,
+            acre: 0.000247105,
+            hectare: 0.0001
+        };
+
+        function convertArea() {
+            const value = parseFloat(document.getElementById('areaValue').value);
+            const from = document.getElementById('areaFrom').value;
+            const to = document.getElementById('areaTo').value;
+            
+            if (!value) {
+                alert('Please enter a value');
+                return;
+            }
+            
+            const sqmeters = value / areaUnits[from];
+            const result = (sqmeters * areaUnits[to]).toFixed(6);
+            
+            document.getElementById('areaAnswer').textContent = `${result} ${to}`;
+            document.getElementById('areaResult').classList.add('show');
+        }
+
+        // Volume Converter
+        const volumeUnits = {
+            liter: 1,
+            milliliter: 1000,
+            cubicmeter: 0.001,
+            gallon: 0.264172,
+            quart: 1.05669,
+            pint: 2.11338,
+            cup: 4.22675,
+            fluidounce: 33.814
+        };
+
+        function convertVolume() {
+            const value = parseFloat(document.getElementById('volumeValue').value);
+            const from = document.getElementById('volumeFrom').value;
+            const to = document.getElementById('volumeTo').value;
+            
+            if (!value) {
+                alert('Please enter a value');
+                return;
+            }
+            
+            const liters = value / volumeUnits[from];
+            const result = (liters * volumeUnits[to]).toFixed(6);
+            
+            document.getElementById('volumeAnswer').textContent = `${result} ${to}`;
+            document.getElementById('volumeResult').classList.add('show');
+        }
+
+        // Temperature Converter
+        function convertTemperature() {
+            const value = parseFloat(document.getElementById('tempValue').value);
+            const from = document.getElementById('tempFrom').value;
+            const to = document.getElementById('tempTo').value;
+            
+            if (isNaN(value)) {
+                alert('Please enter a value');
+                return;
+            }
+            
+            let celsius;
+            
+            // Convert to Celsius first
+            if (from === 'celsius') celsius = value;
+            else if (from === 'fahrenheit') celsius = (value - 32) * 5/9;
+            else if (from === 'kelvin') celsius = value - 273.15;
+            
+            // Convert from Celsius to target
+            let result;
+            if (to === 'celsius') result = celsius;
+            else if (to === 'fahrenheit') result = (celsius * 9/5) + 32;
+            else if (to === 'kelvin') result = celsius + 273.15;
+            
+            document.getElementById('tempAnswer').textContent = `${result.toFixed(2)} ${to}`;
+            document.getElementById('tempResult').classList.add('show');
+        }
+
+        // Mass Converter
+        const massUnits = {
+            kilogram: 1,
+            gram: 1000,
+            milligram: 1000000,
+            pound: 2.20462,
+            ounce: 35.274,
+            ton: 0.001
+        };
+
+        function convertMass() {
+            const value = parseFloat(document.getElementById('massValue').value);
+            const from = document.getElementById('massFrom').value;
+            const to = document.getElementById('massTo').value;
+            
+            if (!value) {
+                alert('Please enter a value');
+                return;
+            }
+            
+            const kilograms = value / massUnits[from];
+            const result = (kilograms * massUnits[to]).toFixed(6);
+            
+            document.getElementById('massAnswer').textContent = `${result} ${to}`;
+            document.getElementById('massResult').classList.add('show');
+        }
+
+        // Time Converter
+        const timeUnits = {
+            second: 1,
+            minute: 1/60,
+            hour: 1/3600,
+            day: 1/86400,
+            week: 1/604800,
+            month: 1/2592000,
+            year: 1/31536000
+        };
+
+        function convertTime() {
+            const value = parseFloat(document.getElementById('timeValue').value);
+            const from = document.getElementById('timeFrom').value;
+            const to = document.getElementById('timeTo').value;
+            
+            if (!value) {
+                alert('Please enter a value');
+                return;
+            }
+            
+            const seconds = value / timeUnits[from];
+            const result = (seconds * timeUnits[to]).toFixed(6);
+            
+            document.getElementById('timeAnswer').textContent = `${result} ${to}`;
+            document.getElementById('timeResult').classList.add('show');
+        }
+
+        // Currency Converter (using approximate rates)
+        const currencyRates = {
+            USD: 1,
+            EUR: 0.92,
+            GBP: 0.79,
+            INR: 83.12,
+            JPY: 149.50,
+            AUD: 1.52,
+            CAD: 1.36,
+            CHF: 0.88,
+            CNY: 7.24
+        };
+
+        function convertCurrency() {
+            const amount = parseFloat(document.getElementById('currencyAmount').value);
+            const from = document.getElementById('currencyFrom').value;
+            const to = document.getElementById('currencyTo').value;
+            
+            if (!amount) {
+                alert('Please enter an amount');
+                return;
+            }
+            
+            const usdAmount = amount / currencyRates[from];
+            const result = (usdAmount * currencyRates[to]).toFixed(2);
+            
+            document.getElementById('currencyAnswer').textContent = `${result} ${to}`;
+            document.getElementById('currencyResult').classList.add('show');
+        }
+
+        // Split Bill Calculator
+        function calculateSplitBill() {
+            const total = parseFloat(document.getElementById('billTotal').value);
+            const people = parseInt(document.getElementById('billPeople').value);
+            const tip = parseFloat(document.getElementById('billTip').value) || 0;
+            
+            if (!total || !people) {
+                alert('Please enter valid values');
+                return;
+            }
+            
+            const tipAmount = total * tip / 100;
+            const totalWithTip = total + tipAmount;
+            const perPerson = totalWithTip / people;
+            
+            document.getElementById('perPersonAmount').textContent = `₹${perPerson.toFixed(2)}`;
+            document.getElementById('totalWithTip').textContent = `₹${totalWithTip.toFixed(2)}`;
+            document.getElementById('splitBillResult').classList.add('show');
+        }
+
+        // GST Calculator
+        function calculateGST() {
+            const type = document.getElementById('gstType').value;
+            const amount = parseFloat(document.getElementById('gstAmount').value);
+            const rate = parseFloat(document.getElementById('gstRate').value);
+            
+            if (!amount) {
+                alert('Please enter an amount');
+                return;
+            }
+            
+            let gstAmount, totalAmount;
+            
+            if (type === 'exclusive') {
+                // Add GST to amount
+                gstAmount = amount * rate / 100;
+                totalAmount = amount + gstAmount;
+            } else {
+                // Remove GST from amount
+                totalAmount = amount;
+                gstAmount = amount - (amount * 100 / (100 + rate));
+            }
+            
+            document.getElementById('gstValue').textContent = `₹${gstAmount.toFixed(2)}`;
+            document.getElementById('gstTotal').textContent = `₹${totalAmount.toFixed(2)}`;
+            document.getElementById('gstResult').classList.add('show');
+        }
+
+        // Initialize
+        updateDisplay();
+    </script>
+</body>
+</html>
